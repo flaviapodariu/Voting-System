@@ -15,7 +15,7 @@ pub trait VotingSys {
         self.candidates().clear();
     }
 
-    #[only_owner]
+    // #[only_owner]
     #[endpoint(addCandidate)]
     fn add_candidate(&self, name: ManagedBuffer<Self::Api>) {
         for candidate in self.candidates().iter() {
@@ -30,21 +30,29 @@ pub trait VotingSys {
         });
     }
 
-    #[only_owner]
+    // #[only_owner]
     #[endpoint(startSession)]
     fn start_session(&self) {
         let candidates_len = self.candidates().len();
         require!(candidates_len > 0, "No candidates have been added!");
         require!(candidates_len != 1, "This is not communism!");
 
+        let current_time = self.blockchain().get_block_timestamp();
+        self.start_time().set(&current_time);
         self.is_active().set(&true);
     }
 
-    #[only_owner]
+    // #[only_owner]
     #[endpoint(closeSession)]
     fn close_session(&self) {
+
+        let current_time = self.blockchain().get_block_timestamp();
+        
+        require!(current_time >= self.start_time().get(), "Voting has not started yet!");
         require!(self.is_active().get(), "Voting session is already closed!");
-        self.is_active().set(false);
+
+        self.end_time().set(&current_time);
+        self.is_active().set(&false);
     }
 
     #[view(getResults)]
@@ -81,9 +89,18 @@ pub trait VotingSys {
         require!(valid_candidate, "Invalid candidate!");
 
         let current_votes = self.votes(&candidate).get();
-        self.votes(&candidate).set(current_votes + 1);
+        self.votes(&candidate).set(&(current_votes + 1));
 
-        self.has_voted(&caller).set(true);
+        self.has_voted(&caller).set(&true);
+    }
+
+    #[view(getCandidates)]
+    fn get_candidates(&self) -> ManagedVec<ManagedBuffer<Self::Api>> {
+        let mut candidates_list = ManagedVec::new();
+        for candidate in self.candidates().iter() {
+            candidates_list.push(candidate.name.clone());
+        }
+        candidates_list
     }
 
     #[storage_mapper("candidates")]
@@ -97,4 +114,10 @@ pub trait VotingSys {
 
     #[storage_mapper("is_active")]
     fn is_active(&self) -> SingleValueMapper<bool>;
+
+    #[storage_mapper("start_time")]
+    fn start_time(&self) -> SingleValueMapper<u64>;
+
+    #[storage_mapper("end_time")]
+    fn end_time(&self) -> SingleValueMapper<u64>;
 }
