@@ -43,12 +43,16 @@ where
     From: TxFrom<Env>,
     Gas: TxGas<Env>,
 {
-    pub fn init(
+    pub fn init<
+        Arg0: ProxyArg<BigUint<Env::Api>>,
+    >(
         self,
+        candidate_fee: Arg0,
     ) -> TxTypedDeploy<Env, From, NotPayable, Gas, ()> {
         self.wrapped_tx
             .payment(NotPayable)
             .raw_deploy()
+            .argument(&candidate_fee)
             .original_result()
     }
 }
@@ -67,9 +71,8 @@ where
     >(
         self,
         name: Arg0,
-    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+    ) -> TxTypedCall<Env, From, To, (), Gas, ()> {
         self.wrapped_tx
-            .payment(NotPayable)
             .raw_call("addCandidate")
             .argument(&name)
             .original_result()
@@ -95,7 +98,7 @@ where
 
     pub fn get_results(
         self,
-    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ManagedVec<Env::Api, CandidateResult<Env::Api>>> {
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, MultiValueEncoded<Env::Api, CandidateResult<Env::Api>>> {
         self.wrapped_tx
             .payment(NotPayable)
             .raw_call("getResults")
@@ -117,10 +120,19 @@ where
 
     pub fn get_candidates(
         self,
-    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ManagedVec<Env::Api, ManagedBuffer<Env::Api>>> {
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, MultiValueEncoded<Env::Api, ManagedBuffer<Env::Api>>> {
         self.wrapped_tx
             .payment(NotPayable)
             .raw_call("getCandidates")
+            .original_result()
+    }
+
+    pub fn register(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("register")
             .original_result()
     }
 }

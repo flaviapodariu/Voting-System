@@ -2,6 +2,8 @@
 
 mod proxy;
 
+use std::env;
+use std::fs;
 use multiversx_sc_snippets::imports::*;
 use multiversx_sc_snippets::sdk;
 use serde::{Deserialize, Serialize};
@@ -31,6 +33,7 @@ async fn main() {
         "getResults" => interact.get_results().await,
         "castVote" => interact.cast_vote().await,
         "getCandidates" => interact.get_candidates().await,
+        "register" => interact.register().await,
         _ => panic!("unknown command: {}", &cmd),
     }
 }
@@ -85,8 +88,17 @@ struct ContractInteract {
 
 impl ContractInteract {
     async fn new() -> Self {
+        let current_dir = env::current_dir().expect("Failed to get current directory");
+        println!("Current working directory: {:?}", current_dir); // Print the current directory
+
+        let pem_path = current_dir.join("wallet.pem");
+
+        let pem = fs::read_to_string(pem_path).expect("failed to read PEM file");
+
+        let wallet = Wallet::from_pem_file_contents(pem).expect("invalid PEM file");
+
         let mut interactor = Interactor::new(GATEWAY).await;
-        let wallet_address = interactor.register_wallet(test_wallets::alice());
+        let wallet_address = interactor.register_wallet(wallet.clone());
         
         let contract_code = BytesValue::interpret_from(
             "mxsc:../output/voting-sys.mxsc.json",
@@ -102,13 +114,15 @@ impl ContractInteract {
     }
 
     async fn deploy(&mut self) {
+        let candidate_fee = BigUint::<StaticApi>::from(5_000_000_000u128);
+
         let new_address = self
             .interactor
             .tx()
             .from(&self.wallet_address)
             .gas(30_000_000u64)
             .typed(proxy::VotingSysProxy)
-            .init()
+            .init(candidate_fee)
             .code(&self.contract_code)
             .returns(ReturnsNewAddress)
             .prepare_async()
@@ -118,13 +132,14 @@ impl ContractInteract {
         self.state
             .set_address(Bech32Address::from_bech32_string(new_address_bech32.clone()));
 
-        println!("new address: {new_address_bech32}");
     }
 
     async fn add_candidate(&mut self) {
+        let egld_amount = BigUint::<StaticApi>::from(5_000_000_000u128);
+
         let name = ManagedBuffer::new_from_bytes(&b""[..]);
 
-        let response = self
+        let _response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
@@ -132,16 +147,15 @@ impl ContractInteract {
             .gas(30_000_000u64)
             .typed(proxy::VotingSysProxy)
             .add_candidate(name)
+            .egld(egld_amount)
             .returns(ReturnsResultUnmanaged)
             .prepare_async()
             .run()
             .await;
-
-        println!("Result: {response:?}");
     }
 
     async fn start_session(&mut self) {
-        let response = self
+        let _response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
@@ -153,12 +167,10 @@ impl ContractInteract {
             .prepare_async()
             .run()
             .await;
-
-        println!("Result: {response:?}");
     }
 
     async fn close_session(&mut self) {
-        let response = self
+        let _response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
@@ -170,12 +182,10 @@ impl ContractInteract {
             .prepare_async()
             .run()
             .await;
-
-        println!("Result: {response:?}");
     }
 
     async fn get_results(&mut self) {
-        let result_value = self
+        let _result_value = self
             .interactor
             .query()
             .to(self.state.current_address())
@@ -185,14 +195,12 @@ impl ContractInteract {
             .prepare_async()
             .run()
             .await;
-
-        println!("Result: {result_value:?}");
     }
 
     async fn cast_vote(&mut self) {
         let candidate = ManagedBuffer::new_from_bytes(&b""[..]);
 
-        let response = self
+        let _response = self
             .interactor
             .tx()
             .from(&self.wallet_address)
@@ -204,12 +212,10 @@ impl ContractInteract {
             .prepare_async()
             .run()
             .await;
-
-        println!("Result: {response:?}");
     }
 
     async fn get_candidates(&mut self) {
-        let result_value = self
+        let _result_value = self
             .interactor
             .query()
             .to(self.state.current_address())
@@ -219,8 +225,21 @@ impl ContractInteract {
             .prepare_async()
             .run()
             .await;
+    }
 
-        println!("Result: {result_value:?}");
+    async fn register(&mut self) {
+        let _response = self
+            .interactor
+            .tx()
+            .from(&self.wallet_address)
+            .to(self.state.current_address())
+            .gas(30_000_000u64)
+            .typed(proxy::VotingSysProxy)
+            .register()
+            .returns(ReturnsResultUnmanaged)
+            .prepare_async()
+            .run()
+            .await;
     }
 
 }

@@ -3,21 +3,32 @@
 #[allow(unused_imports)]
 use multiversx_sc::imports::*;
 
-mod candidate_result;
-use candidate_result:: CandidateResult;
+pub mod candidate_result;
+
+use candidate_result::CandidateResult;
 
 #[multiversx_sc::contract]
 pub trait VotingSys {
-
+    
     #[init]
-    fn init(&self) {
+    fn init(&self, candidate_fee: BigUint) {
         self.is_active().set(&false);
         self.candidates().clear();
+        self.candidate_fee().set(candidate_fee);
     }
 
-    // #[only_owner]
+    #[only_owner]
     #[endpoint(addCandidate)]
+    #[payable("EGLD")]
     fn add_candidate(&self, name: ManagedBuffer<Self::Api>) {
+        let payment = self.call_value().egld_value().clone_value();
+        let candidate_fee = self.candidate_fee().get();
+
+        require!(
+            payment >= candidate_fee,
+            "Insufficient payment! Registration costs 0.1 EGLD."
+        );
+
         for candidate in self.candidates().iter() {
             if candidate.name == name {
                 sc_panic!("Candidate already exists!");
@@ -30,7 +41,7 @@ pub trait VotingSys {
         });
     }
 
-    // #[only_owner]
+    #[only_owner]
     #[endpoint(startSession)]
     fn start_session(&self) {
         let candidates_len = self.candidates().len();
@@ -42,7 +53,7 @@ pub trait VotingSys {
         self.is_active().set(&true);
     }
 
-    // #[only_owner]
+    #[only_owner]
     #[endpoint(closeSession)]
     fn close_session(&self) {
 
@@ -56,13 +67,13 @@ pub trait VotingSys {
     }
 
     #[view(getResults)]
-    fn get_results(&self) -> ManagedVec<CandidateResult<Self::Api>> {
+    fn get_results(&self) -> MultiValueEncoded<CandidateResult<Self::Api>> {
         require!(
-            !self.is_active().get(),
+        !self.is_active().get(),
             "Results are not available until the voting session ends!"
         );
     
-        let mut results = ManagedVec::new();
+        let mut results = MultiValueEncoded::new();
     
         for candidate in self.candidates().iter() {
             results.push(candidate);
@@ -76,9 +87,11 @@ pub trait VotingSys {
         let caller = self.blockchain().get_caller();
 
         require!(self.is_active().get(), "Voting session is not active!");
+        
+        let has_voted = self.registered_voters().get(&caller);
 
         require!(
-            !self.has_voted(&caller).get(),
+            !has_voted.is_none() || has_voted == Some(false),
             "You have already voted!"
         );
 
@@ -89,28 +102,39 @@ pub trait VotingSys {
         require!(valid_candidate, "Invalid candidate!");
 
         let current_votes = self.votes(&candidate).get();
-        self.votes(&candidate).set(&(current_votes + 1));
+        self.votes(&candidate).set(current_votes + 1);
 
-        self.has_voted(&caller).set(&true);
+        self.registered_voters().insert(caller, true);
     }
 
     #[view(getCandidates)]
-    fn get_candidates(&self) -> ManagedVec<ManagedBuffer<Self::Api>> {
-        let mut candidates_list = ManagedVec::new();
+    fn get_candidates(&self) -> MultiValueEncoded<ManagedBuffer<Self::Api>> {
+        let mut candidates_list = MultiValueEncoded::new();
         for candidate in self.candidates().iter() {
             candidates_list.push(candidate.name.clone());
         }
         candidates_list
     }
 
+    #[endpoint(register)]
+    fn register(&self) {
+        let caller = self.blockchain().get_caller();
+        require!(
+            !self.registered_voters().contains_key(&caller),
+            "You are already registered!"
+        );
+
+        self.registered_voters().insert(caller.clone(), false);
+    }
+
     #[storage_mapper("candidates")]
     fn candidates(&self) -> VecMapper<CandidateResult<Self::Api>>;
 
+    #[storage_mapper("candidate_fee")]
+    fn candidate_fee(&self) -> SingleValueMapper<BigUint>;
+
     #[storage_mapper("votes")]
     fn votes(&self, candidate: &ManagedBuffer) -> SingleValueMapper<u64>;
-
-    #[storage_mapper("has_voted")]
-    fn has_voted(&self, voter: &ManagedAddress) -> SingleValueMapper<bool>;
 
     #[storage_mapper("is_active")]
     fn is_active(&self) -> SingleValueMapper<bool>;
@@ -120,4 +144,7 @@ pub trait VotingSys {
 
     #[storage_mapper("end_time")]
     fn end_time(&self) -> SingleValueMapper<u64>;
-}
+
+    #[storage_mapper("registered_voters")]
+    fn registered_voters(&self) -> MapMapper<ManagedAddress, bool>;
+}   

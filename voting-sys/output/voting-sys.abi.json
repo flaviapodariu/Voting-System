@@ -18,13 +18,22 @@
     },
     "name": "VotingSys",
     "constructor": {
-        "inputs": [],
+        "inputs": [
+            {
+                "name": "candidate_fee",
+                "type": "BigUint"
+            }
+        ],
         "outputs": []
     },
     "endpoints": [
         {
             "name": "addCandidate",
+            "onlyOwner": true,
             "mutability": "mutable",
+            "payableInTokens": [
+                "EGLD"
+            ],
             "inputs": [
                 {
                     "name": "name",
@@ -35,12 +44,14 @@
         },
         {
             "name": "startSession",
+            "onlyOwner": true,
             "mutability": "mutable",
             "inputs": [],
             "outputs": []
         },
         {
             "name": "closeSession",
+            "onlyOwner": true,
             "mutability": "mutable",
             "inputs": [],
             "outputs": []
@@ -51,7 +62,8 @@
             "inputs": [],
             "outputs": [
                 {
-                    "type": "List<CandidateResult>"
+                    "type": "variadic<CandidateResult>",
+                    "multi_result": true
                 }
             ]
         },
@@ -72,9 +84,16 @@
             "inputs": [],
             "outputs": [
                 {
-                    "type": "List<bytes>"
+                    "type": "variadic<bytes>",
+                    "multi_result": true
                 }
             ]
+        },
+        {
+            "name": "register",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
         }
     ],
     "esdtAttributes": [],
