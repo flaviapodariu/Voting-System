@@ -16,11 +16,11 @@ export const useSessionStatus = () => {
     const getSessionStatus = async () => {
         try {
             const query = smartContract.createQuery({
-                func: new ContractFunction('is_active')
+                func: new ContractFunction('isActive')
             });
             const queryResponse = await proxy.queryContract(query);
 
-            const endpointDefinition = smartContract.getEndpoint('is_active');
+            const endpointDefinition = smartContract.getEndpoint('isActive');
 
             const result = resultsParser.parseQueryResponse(
                 queryResponse,

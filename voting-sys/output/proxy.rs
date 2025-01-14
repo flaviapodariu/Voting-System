@@ -135,6 +135,15 @@ where
             .raw_call("register")
             .original_result()
     }
+
+    pub fn is_active(
+        self,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, bool> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("isActive")
+            .original_result()
+    }
 }
 
 #[type_abi]

@@ -25,5 +25,6 @@
   "managedCaller",
   "managedOwnerAddress",
   "managedSignalError",
-  "signalError"
+  "signalError",
+  "smallIntFinishSigned"
 ]

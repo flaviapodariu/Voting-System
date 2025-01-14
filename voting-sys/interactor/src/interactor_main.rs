@@ -34,6 +34,7 @@ async fn main() {
         "castVote" => interact.cast_vote().await,
         "getCandidates" => interact.get_candidates().await,
         "register" => interact.register().await,
+        "isActive" => interact.is_active().await,
         _ => panic!("unknown command: {}", &cmd),
     }
 }
@@ -242,4 +243,18 @@ impl ContractInteract {
             .await;
     }
 
+    async fn is_active(&mut self) {
+        let result_value = self
+            .interactor
+            .query()
+            .to(self.state.current_address())
+            .typed(proxy::VotingSysProxy)
+            .is_active()
+            .returns(ReturnsResultUnmanaged)
+            .prepare_async()
+            .run()
+            .await;
+
+        println!("Result: {result_value:?}");
+    }
 }

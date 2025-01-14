@@ -21,7 +21,7 @@ export const Home = () => {
             <div className='flex flex-col gap-2 max-w-[70sch] text-center sm:text-left text-xl font-medium md:text-2xl lg:text-3xl'>
               <div>
                 <h1>Voting System Web3 App</h1>
-                <p className={'text-gray-500 py-2'}>Voting system decantralized app build on the MultiversX blockchain</p>
+                <p className={'text-gray-500 py-2'}>Voting system decentralized app built on the MultiversX blockchain</p>
               </div>
 
               <div className={'w-[250px] text-[16px] h-[36px]'}>

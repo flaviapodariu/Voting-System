@@ -68,10 +68,7 @@ pub trait VotingSys {
 
     #[view(getResults)]
     fn get_results(&self) -> MultiValueEncoded<CandidateResult<Self::Api>> {
-        require!(
-        !self.is_active().get(),
-            "Results are not available until the voting session ends!"
-        );
+        require!(!self.is_active().get(), "Results are not available until the voting session ends!");
     
         let mut results = MultiValueEncoded::new();
     
@@ -86,23 +83,27 @@ pub trait VotingSys {
     fn cast_vote(&self, candidate: ManagedBuffer<Self::Api>) {
         let caller = self.blockchain().get_caller();
 
+        require!(self.candidates().len() > 0, "No candidates available!");
         require!(self.is_active().get(), "Voting session is not active!");
         
-        let has_voted = self.registered_voters().get(&caller);
+        let has_voted = self.registered_voters().get(&caller).unwrap_or(false);
 
-        require!(
-            !has_voted.is_none() || has_voted == Some(false),
-            "You have already voted!"
-        );
+        require!(!has_voted, "You have already voted!");
 
-        let valid_candidate = self.candidates()
-            .iter()
-            .any(|c| c.name == candidate);
+        let mut found = false;
 
-        require!(valid_candidate, "Invalid candidate!");
+        for (idx, cand) in self.candidates().iter().enumerate() {
+            if cand.name.as_ref() == candidate.as_ref() {
+                let mut candidate_result = cand.clone();
+                candidate_result.votes += 1;
+                self.candidates().set(idx, &candidate_result);
+                found = true;
+                break;
+            }
 
-        let current_votes = self.votes(&candidate).get();
-        self.votes(&candidate).set(current_votes + 1);
+        }
+
+        require!(found, "Invalid candidate!");
 
         self.registered_voters().insert(caller, true);
     }
@@ -133,10 +134,7 @@ pub trait VotingSys {
     #[storage_mapper("candidate_fee")]
     fn candidate_fee(&self) -> SingleValueMapper<BigUint>;
 
-    #[storage_mapper("votes")]
-    fn votes(&self, candidate: &ManagedBuffer) -> SingleValueMapper<u64>;
-
-    #[view]
+    #[view(isActive)]
     #[storage_mapper("is_active")]
     fn is_active(&self) -> SingleValueMapper<bool>;
 

@@ -3,7 +3,7 @@ use multiversx_sc::imports::*;
 
 
 
-#[derive(TopEncode, TopDecode, NestedEncode, NestedDecode, TypeAbi, ManagedVecItem, Debug)]
+#[derive(TopEncode, TopDecode, NestedEncode, NestedDecode, TypeAbi, ManagedVecItem, Debug, Clone)]
 pub struct CandidateResult<M: ManagedTypeApi> {
     pub name: ManagedBuffer<M>,
     pub votes: u64,
