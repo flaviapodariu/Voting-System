@@ -94,6 +94,16 @@
       "mutability": "mutable",
       "inputs": [],
       "outputs": []
+    },
+    {
+      "name": "is_active",
+      "mutability": "readonly",
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "bool"
+        }
+      ]
     }
   ],
   "esdtAttributes": [],

@@ -6,20 +6,21 @@ import { smartContract } from 'utils/smartContract';
 
 const resultsParser = new ResultsParser();
 
-export const useListCandidates = () => {
+export const useSessionStatus = () => {
     const { network } = useGetNetworkConfig();
-    const [candidates, setCandidates] = useState<any>();
+
+    const [isActive, setIsActive] = useState<boolean | undefined>(undefined);
 
     const proxy = new ProxyNetworkProvider(network.apiAddress);
 
-    const getCandidates = async () => {
+    const getSessionStatus = async () => {
         try {
             const query = smartContract.createQuery({
-                func: new ContractFunction('getCandidates')
+                func: new ContractFunction('is_active')
             });
             const queryResponse = await proxy.queryContract(query);
 
-            const endpointDefinition = smartContract.getEndpoint('getCandidates');
+            const endpointDefinition = smartContract.getEndpoint('is_active');
 
             const result = resultsParser.parseQueryResponse(
                 queryResponse,
@@ -27,13 +28,11 @@ export const useListCandidates = () => {
             );
 
 
-            const data: any = (result?.firstValue as any)?.["items"];
+            console.log(result)
 
-            const finalData = data?.map((d: any) => {
-                return String.fromCharCode.apply(null, d.value);
-            })
+            const data: any = (result?.firstValue as any)?.["value"];
 
-            setCandidates(finalData);
+            setIsActive(data === true)
 
         } catch (err) {
             console.error('Unable to call getCandidates', err);
@@ -41,8 +40,8 @@ export const useListCandidates = () => {
     };
 
     useEffect(() => {
-        getCandidates();
+        getSessionStatus();
     }, []);
 
-    return { candidates: candidates };
+    return { isActive: isActive };
 };
