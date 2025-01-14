@@ -13,6 +13,9 @@ import {
 import { useScrollToElement } from 'hooks';
 import { Widget } from './components';
 import { WidgetType } from 'types/widget.types';
+import {useState} from "react";
+import {useListCandidates} from "./widgets/ListCandidates/hooks/useListCandidates";
+import {Button, Card} from "../../components";
 
 const WIDGETS: WidgetType[] = [
   {
@@ -90,12 +93,30 @@ const WIDGETS: WidgetType[] = [
 export const Dashboard = () => {
   useScrollToElement();
 
+  const [candidatesList, setCandidatesList] = useState(['C1', 'C2', 'C3']);
+
+  const {candidates} = useListCandidates()
+
   return (
     <AuthRedirectWrapper>
+
       <div className='flex flex-col gap-6 max-w-3xl w-full'>
-        {WIDGETS.map((element) => (
-          <Widget key={element.title} {...element} />
-        ))}
+
+        <div className={'text-xl'}>Candidates List</div>
+
+        {
+          candidatesList.map((c, i) => {
+
+            return <Card key={i} title={c} reference={'TEST'}>
+              {/*<div className={'w-[250px]'}>*/}
+              {/*  <Button onClick={() => {}}>Vote</Button>*/}
+              {/*</div>*/}
+            </Card>
+          })
+        }
+        {/*{WIDGETS.map((element) => (*/}
+        {/*  <Widget key={element.title} {...element} />*/}
+        {/*))}*/}
       </div>
     </AuthRedirectWrapper>
   );
