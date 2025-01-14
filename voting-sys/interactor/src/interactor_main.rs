@@ -114,7 +114,7 @@ impl ContractInteract {
     }
 
     async fn deploy(&mut self) {
-        let candidate_fee = BigUint::<StaticApi>::from(5_000_000_000u128);
+        let candidate_fee = BigUint::<StaticApi>::from(100_000_000_000_000_000u128);
 
         let new_address = self
             .interactor
@@ -135,7 +135,7 @@ impl ContractInteract {
     }
 
     async fn add_candidate(&mut self) {
-        let egld_amount = BigUint::<StaticApi>::from(5_000_000_000u128);
+        let egld_amount = BigUint::<StaticApi>::from(100_000_000_000_000_000u128);
 
         let name = ManagedBuffer::new_from_bytes(&b""[..]);
 

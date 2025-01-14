@@ -136,6 +136,7 @@ pub trait VotingSys {
     #[storage_mapper("votes")]
     fn votes(&self, candidate: &ManagedBuffer) -> SingleValueMapper<u64>;
 
+    #[view]
     #[storage_mapper("is_active")]
     fn is_active(&self) -> SingleValueMapper<bool>;
 
