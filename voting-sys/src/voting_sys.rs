@@ -93,10 +93,10 @@ pub trait VotingSys {
         let mut found = false;
 
         for (idx, cand) in self.candidates().iter().enumerate() {
-            if cand.name.as_ref() == candidate.as_ref() {
+            if cand.name == candidate {
                 let mut candidate_result = cand.clone();
                 candidate_result.votes += 1;
-                self.candidates().set(idx, &candidate_result);
+                self.candidates().set(idx+1, &candidate_result);
                 found = true;
                 break;
             }
